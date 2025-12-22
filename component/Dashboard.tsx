@@ -2,6 +2,7 @@ import { View, Text, ScrollView } from "react-native"
 import { BlurView } from "expo-blur"
 import { MaterialIcons } from "@expo/vector-icons"
 import Swiper from "react-native-swiper"
+import HistoryAnalysisCard from "../component/HistoryAnalysisCard"
 
 export default function DashboardScreen() {
   return (
@@ -23,19 +24,19 @@ export default function DashboardScreen() {
             <MaterialIcons name="dark-mode" size={22} color="#94a3b8" />
           </View>
         </BlurView>
+
+
       </View>
 
       {/* Charts */}
-      <Swiper
-        height={220}
-        showsPagination
-        dotColor="#334155"
-        activeDotColor="#38bdf8"
-      >
-        <View className="bg-slate-900 rounded-2xl p-4 justify-center items-center">
-          <Text className="text-white">Chart Placeholder</Text>
-        </View>
-      </Swiper>
+<Swiper
+  height={300}
+  dotColor="#334155"
+  activeDotColor="#38bdf8"
+  showsPagination
+>
+  <HistoryAnalysisCard />
+</Swiper>
 
     </ScrollView>
   )
