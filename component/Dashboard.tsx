@@ -332,8 +332,9 @@ import { View, Text, ScrollView, TouchableOpacity, useColorScheme, Dimensions } 
 import { MaterialIcons } from "@expo/vector-icons";
 import Swiper from "react-native-swiper";
 import { LineChart } from "react-native-chart-kit";
-import Svg, { Path, Defs, LinearGradient, Stop, G, Circle, Text as SvgText } from "react-native-svg";
+import Svg, { Path, Defs,  Stop, G, Circle, Text as SvgText } from "react-native-svg";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 
 const screenWidth = Dimensions.get("window").width - 40;
 const GAUGE_WIDTH = 200;
@@ -448,7 +449,7 @@ const renderGaugeMarkers = () => {
         <Path
           d={`M ${innerPoint.x} ${innerPoint.y} L ${outerPoint.x} ${outerPoint.y}`}
           stroke={isDark ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.4)"}
-          strokeWidth="1.5"
+          strokeWidth="0.5"
         />
         <SvgText
           x={labelPoint.x}
@@ -517,28 +518,62 @@ fill="white"
   };
 
   return (
-    <SafeAreaView className={`${isDark ? "bg-slate-950" : "bg-gray-100"} flex-1`}>
+        <LinearGradient
+      colors={["#040e16", "#061420"]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }}
+      className="flex-1"
+    >
+
+
+
       {/* Header */}
-      <View className="flex-row justify-between items-center p-4 bg-white/10 dark:bg-gray-800 rounded-b-xl">
+      <View className="flex-row justify-between items-center p-4 bg-[#040e16]/50 rounded-b-xl">
         <View className="flex-row items-center gap-3">
-          <View className="bg-gradient-to-tr from-cyan-500 to-blue-500 w-10 h-10 rounded-lg flex items-center justify-center">
+          {/* <View className="bg-gradient-to-tr from-cyan-500 to-blue-500 w-10 h-10 rounded-lg flex items-center justify-center">
             <MaterialIcons name="sensors" size={24} color="#fff" />
-          </View>
+          </View> */}
           <View>
-            <Text className="text-base font-bold text-gray-900 dark:text-white">SensorDash</Text>
-            <Text className="text-xs text-gray-500 dark:text-gray-400">LAB DS18B20</Text>
+            <Text className="text-base font-bold text-white">ODV - Project LAB</Text>
+            <Text className="text-sm text-white">DS18B20</Text>
           </View>
         </View>
-        <TouchableOpacity onPress={() => setIsDark(!isDark)}>
-          <MaterialIcons name={isDark ? "dark-mode" : "light-mode"} size={24} color={isDark ? "#fff" : "#000"} />
-        </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 20 }} className="space-y-6">
+          <LinearGradient
+    colors={["#040e16", "#071927"]}
+    start={{ x: 0, y: 0 }}
+    end={{ x: 1, y: 0 }}
+    className="rounded-2xl p-5 border-2 border-[#0b1d2c]"
+  >
+        <Text className="text-white font-semibold ">State</Text>
+
+    <View className="flex-row items-center gap-3 self-center">
+      <View className="w-12 h-12 rounded-full bg-[#222635] items-center justify-center">
+        <MaterialIcons name="power-settings-new" size={30} color="#fff" />
+      </View>
+      <View>
+        {/* <Text className="text-xs text-gray-400">Monitoring Active</Text> */}
+      </View>
+    </View>
+
+    {/* <View className="w-12 h-6 bg-emerald-500 rounded-full justify-center">
+      <View className="w-5 h-5 bg-white rounded-full ml-6" />
+    </View> */}
+  </LinearGradient>
         {/* Gauge Section */}
-        <View className="bg-[#071623] dark:bg-gray-200 rounded-3xl p-6">
+                <LinearGradient
+      colors={["#061420", "#040e16"]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }}
+      className=" rounded-3xl p-5 border-2 border-[#0b1d2c]"
+    >
+        <View >
+                        <Text className="text-white   -mt-2 text-base font-semibold">Temperature Local</Text>
+
           <View className="items-center mt-6">
-            <Svg width={screenWidth} height={180} viewBox="0 0 200 150">
+            <Svg width={screenWidth} height={180} viewBox="0 0 200 140">
               {/* Static background arc */}
               <Path
                 d={`M 20 100 A ${RADIUS} ${RADIUS} 0 0 1 180 100`}
@@ -562,15 +597,93 @@ fill="white"
             </Svg>
             
             {/* Current temperature display */}
-            <View className="mt-8 items-center">
-              <Text className="text-5xl font-bold text-cyan-400 mb-1">{localTemp}°C</Text>
-              <Text className="text-gray-400 dark:text-gray-600 text-sm">Current Temperature</Text>
+            <View className=" items-center -mt-6">
+              <Text className="text-2xl font-semibold text-white mb-1">{localTemp}°C</Text>
             </View>
             
             {/* Color range legend */}
-            {renderColorRangeLegend()}
+            {/* {renderColorRangeLegend()} */}
           </View>
         </View>
+</LinearGradient>
+
+<View className="space-y-4">
+
+
+  <View className="flex-row flex-wrap justify-between gap-y-4">
+
+    {/* Temperature */}
+    <LinearGradient
+      colors={["#061420", "#040e16"]}
+      className="w-[48%] rounded-2xl p-4 border border-[#0b1d2c] justify-center items-center "
+    >
+      <Text className="text-sm text-gray-400 font-semibold mb-1">Temperature Local</Text>
+      <View className="flex-row items-center gap-2 mb-2 ">
+        <MaterialIcons name="device-thermostat" size={22} color="#2dab87" />
+      </View>
+            <View className="flex-row  items-baseline ">
+      <Text className="text-white text-xl font-semibold ">{localTemp}</Text>
+      <Text className="text-gray-400 text-base ml-1">°C</Text>
+
+      </View>
+      <View className="h-1 w-full bg-[#2dab87] rounded-full" />
+    </LinearGradient>
+
+    {/* Pressure */}
+        <LinearGradient
+      colors={["#061420", "#040e16"]}
+      className="w-[48%] rounded-2xl p-4 border border-[#0b1d2c] justify-center items-center"
+    >
+      <Text className="text-sm text-gray-400 font-semibold mb-1">Temperature</Text>
+      <View className="flex-row items-center gap-2 mb-2 ">
+        <MaterialIcons name="device-thermostat" size={22} color="#c7564c" />
+      </View>
+      <View className="flex-row  items-baseline ">
+      <Text className="text-white text-xl font-semibold ">{localTemp}</Text>
+      <Text className="text-gray-400 text-base ml-1">°C</Text>
+
+      </View>
+            <View className="h-1 w-full bg-[#c7564c] rounded-full" />
+
+    </LinearGradient>
+
+            <LinearGradient
+      colors={["#061420", "#040e16"]}
+      className="w-[48%] rounded-2xl p-4 border border-[#0b1d2c] justify-center items-center"
+    >
+      <Text className="text-sm text-gray-400 font-semibold mb-1">Pressure</Text>
+      <View className="flex-row items-center gap-2 mb-2 ">
+        <MaterialIcons name="speed" size={22} color="#dd9e36" />
+      </View>
+      <View className="flex-row  items-baseline ">
+      <Text className="text-white text-xl font-semibold ">{localTemp}</Text>
+      <Text className="text-gray-400 text-base ml-1">hpa</Text>
+
+      </View>
+            <View className="h-1 w-full bg-[#dd9e36] rounded-full" />
+
+    </LinearGradient>
+
+
+            <LinearGradient
+      colors={["#061420", "#040e16"]}
+      className="w-[48%] rounded-2xl p-4 border border-[#0b1d2c] justify-center items-center"
+    >
+      <Text className="text-sm text-gray-400 font-semibold mb-1">Humidity</Text>
+      <View className="flex-row items-center gap-2 mb-2 ">
+        <MaterialIcons name="water-drop" size={22} color="#4692c6" />
+      </View>
+      <View className="flex-row  items-baseline ">
+      <Text className="text-white text-xl font-semibold ">{localTemp}</Text>
+      <Text className="text-gray-400 text-base ml-1">hpa</Text>
+
+      </View>
+            <View className="h-1 w-full bg-[#4692c6] rounded-full" />
+
+    </LinearGradient>
+
+  </View>
+</View>
 
 
         {/* Chart Section */}
@@ -598,6 +711,8 @@ fill="white"
           </View>
         </Swiper>
       </ScrollView>
-    </SafeAreaView>
+
+                </LinearGradient>
+
   );
 }
