@@ -17,6 +17,7 @@ import { NativeWindStyleSheet } from "nativewind";
 import CustomDrawerContent from '@/Items/CustomDrawerContent';
 import store, { RootState } from "@/services/store";
 import DashboardScreen from "@/component/Dashboard";
+import AnalyzeScreen from "@/component/Analyze";
 
 LogBox.ignoreAllLogs(true);
 NativeWindStyleSheet.setOutput({ default: "native" });
@@ -51,7 +52,8 @@ function MainDrawer() {
       drawerContent={(props) => <CustomDrawerContent {...props} />}
     >
       {/* <Drawer.Screen name="Home" component={HomeScreen} /> */}
-      <Drawer.Screen name="Dashboard" component={DashboardScreen} />
+      <Drawer.Screen name="Dashboard" component={DashboardScreen} options={{ drawerItemStyle: { display: "none" } }} />
+      <Drawer.Screen name="Analyze" component={AnalyzeScreen} options={{ drawerItemStyle: { display: "none" } }}/>
     </Drawer.Navigator>
   );
 }

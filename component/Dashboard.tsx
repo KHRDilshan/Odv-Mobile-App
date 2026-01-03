@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { View, Text, ScrollView, TouchableOpacity, useColorScheme, Dimensions } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { LineChart } from "react-native-chart-kit";
@@ -6,6 +6,10 @@ import Svg, { Path, Defs,  Stop, G, Circle, Text as SvgText } from "react-native
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { environment } from "@/environment/environment";
+import { useNavigation, DrawerActions, useFocusEffect } from "@react-navigation/native";
+import { useDrawerStatus } from "@react-navigation/drawer";
+import * as ScreenOrientation from 'expo-screen-orientation';
+
 type ChartDataType = {
   labels: string[];
   datasets: {
@@ -48,6 +52,8 @@ const [humidityChartData, setHumidityChartData] = useState<ChartDataType>({
 const [humidity, setHumidity] = useState(0);
 const [pressure, setPressure] = useState(0);
 const [state, setState] = useState("INIT");
+const navigation = useNavigation();
+
 useEffect(() => {
   let isMounted = true;
 
@@ -82,7 +88,45 @@ useEffect(() => {
     isMounted = false;
     clearInterval(interval);
   };
-}, []);
+}, [navigation]);
+const [chartWidth, setChartWidth] = useState(Dimensions.get("window").width - 40);
+useFocusEffect(
+  useCallback(() => {
+    let isActive = true;
+
+    const lockAndUpdate = async () => {
+      if (isActive) {
+        // Lock to portrait
+        await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT);
+
+        // Update chart width dynamically
+        const width = Dimensions.get("window").width - 40;
+        setChartWidth(width);
+      }
+    };
+    lockAndUpdate();
+
+    // Listen for window size changes
+    const subscription = Dimensions.addEventListener("change", ({ window }) => {
+      if (isActive) setChartWidth(window.width - 40);
+    });
+
+    // Cleanup
+    return () => {
+      isActive = false;
+      ScreenOrientation.unlockAsync(); // unlock rotation
+      subscription?.remove(); // ✅ remove listener correctly
+    };
+  }, [])
+);
+const rotateToLandscape = async () => {
+  await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
+};
+
+const rotateToPortrait = async () => {
+  await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT);
+};
+
 const MAX_POINTS = 6;
 useEffect(() => {
   const label = new Date().toLocaleTimeString().slice(3, 8);
@@ -257,9 +301,14 @@ fill="white"
       {/* Header */}
       <View className="flex-row justify-between items-center p-4 bg-[#040e16]/50 rounded-b-xl">
         <View className="flex-row items-center gap-3">
-          {/* <View className="bg-gradient-to-tr from-cyan-500 to-blue-500 w-10 h-10 rounded-lg flex items-center justify-center">
-            <MaterialIcons name="sensors" size={24} color="#fff" />
-          </View> */}
+   <TouchableOpacity
+  activeOpacity={0.7}
+  onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
+  className="bg-gradient-to-tr from-cyan-500 to-blue-500 w-10 h-10 rounded-lg flex items-center justify-center"
+>
+  <MaterialIcons name="sensors" size={24} color="#fff" />
+</TouchableOpacity>
+
           <View>
             <Text className="text-base font-bold text-white">ODV - Project LAB</Text>
             <Text className="text-sm text-white">DS18B20</Text>
@@ -446,7 +495,7 @@ fill="white"
       {item.data.labels.length > 0 ? (
         <LineChart
           data={item.data}
-          width={screenWidth - 60} // leave padding inside card
+          width={chartWidth - 60}
           height={200}
           chartConfig={{
             backgroundColor: "#061420",
