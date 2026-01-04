@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -43,13 +44,6 @@ export default function AnalyzeScreen() {
 
   const screenWidth = Dimensions.get("window").width - 40;
   const navigation = useNavigation();
-  const [errorMsg, setErrorMsg] = useState("");
-  const [showError, setShowError] = useState(false);
-
-    const showAlert = (message: string) => {
-    setErrorMsg(message);
-    setShowError(true);
-  };
 
   // Format time object to HH:MM:SS string
   const formatTime = (time: { h: string; m: string; s: string }) =>
@@ -70,56 +64,37 @@ export default function AnalyzeScreen() {
     );
   };
 
-const getSensorData = async () => {
+  // Fetch sensor data
+  const getSensorData = async () => {
     if (!params.length) {
-      showAlert("Select at least one parameter!");
+      Alert.alert("Select at least one parameter!");
       return;
     }
 
-  // Construct full Date objects combining date and time
-  const fromDateTime = new Date(fromDate);
-  fromDateTime.setHours(Number(fromTime.h));
-  fromDateTime.setMinutes(Number(fromTime.m));
-  fromDateTime.setSeconds(Number(fromTime.s));
+    const startTime = formatTime(fromTime);
+    const endTime = formatTime(toTime);
+    const parameter = params[0];
 
-  const toDateTime = new Date(toDate);
-  toDateTime.setHours(Number(toTime.h));
-  toDateTime.setMinutes(Number(toTime.m));
-  toDateTime.setSeconds(Number(toTime.s));
+    const startDate = fromDate.toISOString().split("T")[0];
+    const endDate = toDate.toISOString().split("T")[0];
 
-  const diffMinutes = (toDateTime.getTime() - fromDateTime.getTime()) / (1000 * 60); // diff in minutes
+    try {
+      const query = `?startDate=${startDate}&startTime=${startTime}&endDate=${endDate}&endTime=${endTime}&parameter=${parameter}`;
+      const response = await fetch(`${environment.API_BASE_URL}/sensorReadingsByDateTime${query}`);
+      const data = await response.json();
 
-    if (diffMinutes > 5 || diffMinutes < 0) {
-      showAlert("Time range must be within 5 minutes!");
-      return;
-    }
-
-  const startTime = formatTime(fromTime);
-  const endTime = formatTime(toTime);
-  const parameter = params[0];
-
-  const startDateStr = fromDateTime.toISOString().split("T")[0];
-  const endDateStr = toDateTime.toISOString().split("T")[0];
-
-  try {
-    const query = `?startDate=${startDateStr}&startTime=${startTime}&endDate=${endDateStr}&endTime=${endTime}&parameter=${parameter}`;
-    const response = await fetch(`${environment.API_BASE_URL}/sensorReadingsByDateTime${query}`);
-    const data = await response.json();
-
-        if (!response.ok) {
-        showAlert(data.error || "Failed to fetch sensor data");
+      if (!response.ok) {
+        Alert.alert(data.error || "Failed to fetch sensor data");
         return;
       }
 
-    setSensorData(data);
-    setFilteredData(data); // initially show all
-  } catch (err) {
-    console.error(err);
-      showAlert("Error connecting to server");
-  }
-};
-
-
+      setSensorData(data);
+      setFilteredData(data); // initially show all
+    } catch (err) {
+      console.error(err);
+      Alert.alert("Error connecting to server");
+    }
+  };
 
   // Filter chart data based on selected filters
   useEffect(() => {
@@ -141,7 +116,7 @@ const getSensorData = async () => {
 
   // Prepare chart data
   const chartData = {
-    labels: filteredData.map(item => item.time.slice(0,20)), // HH:MM
+    labels: filteredData.map(item => item.time.slice(0, 5)), // HH:MM
     datasets: SENSOR_KEYS.filter(s => filters.includes(s.label) || filters.length === 0).map(sensor => ({
       data: filteredData.map(item => item[sensor.key] ?? 0),
       color: () => sensor.color,
@@ -175,7 +150,6 @@ const rotateToPortrait = async () => {
           <TouchableOpacity
             activeOpacity={0.7}
             onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
-            
             className="bg-gradient-to-tr from-cyan-500 to-blue-500 w-10 h-10 rounded-lg flex items-center justify-center"
           >
             <MaterialIcons name="sensors" size={24} color="#fff" />
@@ -263,28 +237,27 @@ const rotateToPortrait = async () => {
   }}
 >
   {/* Fullscreen Button */}
-  <TouchableOpacity
-    onPress={toggleOrientation}
-    style={{
-      position: "absolute",
-      top: 10,
-      right: 10,
-      backgroundColor: "#1e293b",
-      padding: 6,
-      borderRadius: 6,
-      zIndex: 10,
-    }}
-  >
-    <Text style={{ color: "#fff", fontWeight: "bold" }}>⤢</Text>
-  </TouchableOpacity>
+<TouchableOpacity
+  onPress={() => setIsHorizontalModal(true)}
+  style={{
+    position: "absolute",
+    top: 10,
+    right: 10,
+    backgroundColor: "#1e293b",
+    padding: 6,
+    borderRadius: 6,
+    zIndex: 10,
+  }}
+>
+  <Text style={{ color: "#fff", fontWeight: "bold" }}>⤢</Text>
+</TouchableOpacity>
+
 
   {chartData.labels.length > 0 ? (
     <LineChart
       data={chartData}
       width={screenWidth - 20}
       height={250}
-        xLabelsOffset={20}
-        verticalLabelRotation={-40}
       chartConfig={{
         backgroundColor: "#061420",
         backgroundGradientFrom: "#061420",
@@ -293,7 +266,6 @@ const rotateToPortrait = async () => {
         color: (opacity = 1, index) => chartData.datasets[index ?? 0].color(),
         labelColor: () => "#64748b",
       }}
-      
       bezier
       style={{ borderRadius: 16 }}
     />
@@ -345,57 +317,126 @@ const rotateToPortrait = async () => {
             </View>
           </View>
         </Modal>
-
-        
       )}
 
-        <Modal
-              visible={showError}
-              transparent
-              animationType="fade"
-              onRequestClose={() => setShowError(false)}
-            >
-              <View
-                style={{
-                  flex: 1,
-                  justifyContent: "center",
-                  alignItems: "center",
-                  backgroundColor: "rgba(0,0,0,0.5)",
-                }}
-              >
-                <View
-                  style={{
-                    backgroundColor: "#071927",
-                    borderColor: "#2dab87",
-                    borderWidth: 1,
-                    padding: 20,
-                    borderRadius: 16,
-                    width: "80%",
-                    alignItems: "center",
-                  }}
-                >
-                  <Text style={{ color: "#2dab87", fontWeight: "bold", textAlign: "center", fontSize: 16 }}>
-                      {errorMsg}
-                  </Text>
+
+      <Modal visible={isHorizontalModal} animationType="slide" transparent={true}>
+  <View className="flex-1 bg-black/80 justify-center items-center">
+    <View
+      style={{
+        width: "95%",
+        height: "90%",
+        backgroundColor: "#061420",
+        borderRadius: 16,
+        flexDirection: "row", // horizontal layout
+        overflow: "hidden",
+      }}
+    >
+     <View
+  style={{ transform: [{ rotate: "90deg" }] }}
+  className="flex"
+>
+  <ScrollView
+  className="w-full z-50 "
+    horizontal
+    showsHorizontalScrollIndicator={false}
+    contentContainerStyle={{ alignItems: "center" }}
+  >
+    {SENSOR_KEYS.map(f => (
+      <TouchableOpacity
+        key={f.label}
+        onPress={() => toggleFilter(f.label)}
+        style={{
+          paddingVertical: 12,
+          paddingHorizontal: 16,
+          borderRadius: 12,
+          marginRight: 8, // 👈 horizontal spacing
+          backgroundColor: filters.includes(f.label)
+            ? "rgba(16,185,129,0.3)"
+            : "#0a2234",
+          borderWidth: filters.includes(f.label) ? 1 : 0,
+          borderColor: "#10b981",
+        }}
+        className="z-50"
+      >
+        <Text style={{ color: "#fff", fontWeight: "500" }}>
+          {f.label}
+        </Text>
+      </TouchableOpacity>
+    ))}
+  </ScrollView>
+ <View   
+     style={{
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    overflow: "hidden",
+  }}
+  className="-mt-[60%]"
       
-                  <TouchableOpacity
-                    onPress={() => setShowError(false)}
-                    style={{
-                      marginTop: 16,
-                      backgroundColor: "#2dab87",
-                      paddingVertical: 10,
-                      paddingHorizontal: 20,
-                      borderRadius: 12,
-                    }}
-                  >
-                    <Text style={{ color: "#fff", fontWeight: "bold" }}>OK</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </Modal>
+      >
+        {chartData.labels.length > 0 ? (
+<LineChart
+  data={chartData}
+  width={500}
+  height={320} // 👈 slightly taller
+  chartConfig={{
+    backgroundColor: "#061420",
+    backgroundGradientFrom: "#061420",
+    backgroundGradientTo: "#040e16",
+    decimalPlaces: 1,
+    color: (opacity = 1, index) =>
+      chartData.datasets[index ?? 0].color(),
+    labelColor: () => "#64748b",
+    propsForLabels: {
+      fontSize: 10,
+      dy: 10,     // 👈 push labels DOWN
+    },
+  }}
+  verticalLabelRotation={-30}
+  yAxisLabel=""
+  yAxisSuffix=""
+  xAxisLabel=""
+  bezier
+  style={{
+    borderRadius: 16,
+    marginLeft: 16,   // 👈 critical
+    marginBottom: 24 // 👈 critical
+  }}
+/>
+
+        ) : (
+          <Text style={{ color: "#94a3b8", textAlign: "center" }}>No data yet</Text>
+        )}
+      </View> 
+
+
+
+    </View>
+    <TouchableOpacity
+  onPress={() => setIsHorizontalModal(false)}
+  style={{
+    position: "absolute",
+    bottom: 12,
+    right: 12,
+    backgroundColor: "#1e293b",
+    padding: 8,
+    borderRadius: 8,
+    zIndex: 50, // 🔥 ABOVE EVERYTHING
+  }}
+>
+  <Text style={{ color: "#fff", fontWeight: "bold" }}>✕</Text>
+</TouchableOpacity>
+    </View>
+    
+  </View>
+</Modal>
+
     </LinearGradient>
   );
 }
+
+
 
 // SMALL UI COMPONENTS
 const DateBox = ({ date, onPress }: any) => (
@@ -411,4 +452,3 @@ const TimeBox = ({ value, onPress }: any) => (
 );
 
 const Colon = () => <Text className="text-white font-semibold">:</Text>;
-

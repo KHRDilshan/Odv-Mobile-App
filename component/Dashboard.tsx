@@ -9,6 +9,8 @@ import { environment } from "@/environment/environment";
 import { useNavigation, DrawerActions, useFocusEffect } from "@react-navigation/native";
 import { useDrawerStatus } from "@react-navigation/drawer";
 import * as ScreenOrientation from 'expo-screen-orientation';
+import { StackNavigationProp } from "@react-navigation/stack";
+import { RootStackParamList,DrawerParamList } from "./types";
 
 type ChartDataType = {
   labels: string[];
@@ -17,6 +19,14 @@ type ChartDataType = {
   }[];
 };
 
+type DashboardNavigationProps = StackNavigationProp<
+  DrawerParamList,
+  "Dashboard"
+>;
+
+interface DashboardProps {
+  navigation: DashboardNavigationProps;
+}
 const screenWidth = Dimensions.get("window").width - 40;
 const GAUGE_WIDTH = 200;
 const GAUGE_HEIGHT = 100;
@@ -24,7 +34,7 @@ const RADIUS = 80;
 const CENTER_X = 100;
 const CENTER_Y = 100;
 
-export default function Dashboard() {
+const Dashboard: React.FC<DashboardProps> = ({ navigation }) => {
   const colorScheme = useColorScheme();
   const [isDark, setIsDark] = useState(colorScheme === "dark");
   const [time, setTime] = useState("");
@@ -52,43 +62,79 @@ const [humidityChartData, setHumidityChartData] = useState<ChartDataType>({
 const [humidity, setHumidity] = useState(0);
 const [pressure, setPressure] = useState(0);
 const [state, setState] = useState("INIT");
-const navigation = useNavigation();
 
-useEffect(() => {
-  let isMounted = true;
 
-  const fetchSensorData = async () => {
-    try {
-      const res= await fetch(`${environment.API_BASE_URL}/sensorReadings`);    
+useFocusEffect(
+  useCallback(() => {
+    let isMounted = true;
+
+    const fetchSensorData = async () => {
+      console.log("hit dash")
+      try {
+        const res = await fetch(`${environment.API_BASE_URL}/sensorReadings`);
         const data = await res.json();
 
-      if (!isMounted) return;
+        if (!isMounted) return;
 
-      const tempLocal = Number(data.temperature_locale);
+        const tempLocal = Number(data.temperature_locale);
 
-      setLocalTemp(tempLocal);
-      setTemperature(Number(data.temperature));
-      setHumidity(Number(data.humidity));
-      setPressure(Number(data.pressure));
-      setState(data.state);
+        setLocalTemp(tempLocal);
+        setTemperature(Number(data.temperature));
+        setHumidity(Number(data.humidity));
+        setPressure(Number(data.pressure));
+        setState(data.state);
 
-      // Gauge
-      setNeedleDeg(calculateNeedleAngle(tempLocal));
+        // Gauge
+        setNeedleDeg(calculateNeedleAngle(tempLocal));
+      } catch (err) {
+        console.log("Fetch error:", err);
+      }
+    };
+
+    fetchSensorData(); // fetch immediately on focus
+    const interval = setInterval(fetchSensorData, 1000); // polling every 1s
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval); // stop polling when screen loses focus
+    };
+  }, [])
+);
+// useEffect(() => {
+//   let isMounted = true;
+
+//   const fetchSensorData = async () => {
+//     try {
+//       const res= await fetch(`${environment.API_BASE_URL}/sensorReadings`);    
+//         const data = await res.json();
+
+//       if (!isMounted) return;
+
+//       const tempLocal = Number(data.temperature_locale);
+
+//       setLocalTemp(tempLocal);
+//       setTemperature(Number(data.temperature));
+//       setHumidity(Number(data.humidity));
+//       setPressure(Number(data.pressure));
+//       setState(data.state);
+
+//       // Gauge
+//       setNeedleDeg(calculateNeedleAngle(tempLocal));
 
 
-    } catch (err) {
-      console.log("Fetch error:", err);
-    }
-  };
+//     } catch (err) {
+//       console.log("Fetch error:", err);
+//     }
+//   };
 
-  fetchSensorData();               // Initial load
-  const interval = setInterval(fetchSensorData, 1000); // 1s polling
+//   fetchSensorData();               // Initial load
+//   const interval = setInterval(fetchSensorData, 1000); // 1s polling
 
-  return () => {
-    isMounted = false;
-    clearInterval(interval);
-  };
-}, [navigation]);
+//   return () => {
+//     isMounted = false;
+//     clearInterval(interval);
+//   };
+// }, [navigation]);
 const [chartWidth, setChartWidth] = useState(Dimensions.get("window").width - 40);
 useFocusEffect(
   useCallback(() => {
@@ -534,3 +580,5 @@ fill="white"
 
   );
 }
+
+export default Dashboard;

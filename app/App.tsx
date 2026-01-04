@@ -18,6 +18,12 @@ import CustomDrawerContent from '@/Items/CustomDrawerContent';
 import store, { RootState } from "@/services/store";
 import DashboardScreen from "@/component/Dashboard";
 import AnalyzeScreen from "@/component/Analyze";
+import chart2 from '@/component/chart2'
+import chart3 from '@/component/chart3'
+import chart4 from '@/component/chart4'
+import SystemLinkLogin from "@/component/Login";
+import Splash from "@/component/Splash";
+
 
 LogBox.ignoreAllLogs(true);
 NativeWindStyleSheet.setOutput({ default: "native" });
@@ -54,6 +60,10 @@ function MainDrawer() {
       {/* <Drawer.Screen name="Home" component={HomeScreen} /> */}
       <Drawer.Screen name="Dashboard" component={DashboardScreen} options={{ drawerItemStyle: { display: "none" } }} />
       <Drawer.Screen name="Analyze" component={AnalyzeScreen} options={{ drawerItemStyle: { display: "none" } }}/>
+      <Drawer.Screen name="ChartOption2" component={chart2} options={{ drawerItemStyle: { display: "none" } }} />
+            <Drawer.Screen name="ChartOption3" component={chart3} options={{ drawerItemStyle: { display: "none" } }} />
+               {/* <Drawer.Screen name="ChartOption4" component={chart4} options={{ drawerItemStyle: { display: "none" } }} /> */}
+
     </Drawer.Navigator>
   );
 }
@@ -110,6 +120,8 @@ function AppContent() {
       >
         <NavigationContainer ref={navigationRef}>
           <Stack.Navigator screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="Splash" component={Splash} />
+            <Stack.Screen name="Login" component={SystemLinkLogin} />
             <Stack.Screen name="MainDrawer" component={MainDrawer} />
            
           </Stack.Navigator>

@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from "react";
+
+import React, { useState, useMemo, useRef, useEffect } from "react";
+import { WebView } from "react-native-webview";
 import {
   View,
   Text,
@@ -16,18 +18,57 @@ import { useNavigation, DrawerActions } from "@react-navigation/native";
 import { environment } from "@/environment/environment";
 import { LineChart } from "react-native-chart-kit";
 import * as ScreenOrientation from 'expo-screen-orientation';
+const SCREEN_WIDTH = Dimensions.get("window").width;
+
+// Define sensor structure
+type SensorKey = {
+  label: string;
+  key: keyof SensorRecord; // strong typing for dynamic access
+  color: string;
+};
+
+// Each data record
+type SensorRecord = {
+  time: string;
+  localTemperature: number;
+  temperature: number;
+  pressure: number;
+  humidity: number;
+};
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, "0"));
 const MIN_SEC = Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, "0"));
 
-const SENSOR_KEYS = [
+// All sensor keys
+const SENSOR_KEYS: SensorKey[] = [
   { label: "Local Temperature", key: "localTemperature", color: "#10b981" },
   { label: "Temperature", key: "temperature", color: "#e71831" },
   { label: "Pressure", key: "pressure", color: "#f59e0b" },
   { label: "Humidity", key: "humidity", color: "#006de8" },
 ];
 
+// Mock function to generate many records
+const generateData = (): SensorRecord[] => {
+  const data: SensorRecord[] = [];
+  const startTime = new Date("2026-01-01T14:57:19");
+  for (let i = 0; i < 4339; i++) {
+    const d = new Date(startTime.getTime() + i * 60 * 1000); // 1-minute interval
+    data.push({
+      time: d.toISOString(),
+      localTemperature: Math.random() * 10 + 20,
+      temperature: Math.random() * 10 + 18,
+      pressure: Math.random() * 20 + 980,
+      humidity: Math.random() * 30 + 40,
+    });
+  }
+  return data;
+};
+
 export default function AnalyzeScreen() {
+  const [filters, setFilters] = useState<string[]>([]);
+  const webViewRef = useRef<WebView>(null);
+
+
   const [fromDate, setFromDate] = useState(new Date());
   const [toDate, setToDate] = useState(new Date());
   const [fromTime, setFromTime] = useState({ h: "14", m: "57", s: "19" });
@@ -37,19 +78,11 @@ export default function AnalyzeScreen() {
   const [picker, setPicker] = useState<{ type: "h" | "m" | "s"; target: "from" | "to" } | null>(null);
 
   const [params, setParams] = useState<string[]>([]);
-  const [filters, setFilters] = useState<string[]>([]); // active filters
   const [sensorData, setSensorData] = useState<any[]>([]);
   const [filteredData, setFilteredData] = useState<any[]>([]); // chart filtered data
 
   const screenWidth = Dimensions.get("window").width - 40;
   const navigation = useNavigation();
-  const [errorMsg, setErrorMsg] = useState("");
-  const [showError, setShowError] = useState(false);
-
-    const showAlert = (message: string) => {
-    setErrorMsg(message);
-    setShowError(true);
-  };
 
   // Format time object to HH:MM:SS string
   const formatTime = (time: { h: string; m: string; s: string }) =>
@@ -70,56 +103,37 @@ export default function AnalyzeScreen() {
     );
   };
 
-const getSensorData = async () => {
+  // Fetch sensor data
+  const getSensorData = async () => {
     if (!params.length) {
-      showAlert("Select at least one parameter!");
+      Alert.alert("Select at least one parameter!");
       return;
     }
 
-  // Construct full Date objects combining date and time
-  const fromDateTime = new Date(fromDate);
-  fromDateTime.setHours(Number(fromTime.h));
-  fromDateTime.setMinutes(Number(fromTime.m));
-  fromDateTime.setSeconds(Number(fromTime.s));
+    const startTime = formatTime(fromTime);
+    const endTime = formatTime(toTime);
+    const parameter = params[0];
 
-  const toDateTime = new Date(toDate);
-  toDateTime.setHours(Number(toTime.h));
-  toDateTime.setMinutes(Number(toTime.m));
-  toDateTime.setSeconds(Number(toTime.s));
+    const startDate = fromDate.toISOString().split("T")[0];
+    const endDate = toDate.toISOString().split("T")[0];
 
-  const diffMinutes = (toDateTime.getTime() - fromDateTime.getTime()) / (1000 * 60); // diff in minutes
+    try {
+      const query = `?startDate=${startDate}&startTime=${startTime}&endDate=${endDate}&endTime=${endTime}&parameter=${parameter}`;
+      const response = await fetch(`${environment.API_BASE_URL}/sensorReadingsByDateTime${query}`);
+      const data = await response.json();
 
-    if (diffMinutes > 5 || diffMinutes < 0) {
-      showAlert("Time range must be within 5 minutes!");
-      return;
-    }
-
-  const startTime = formatTime(fromTime);
-  const endTime = formatTime(toTime);
-  const parameter = params[0];
-
-  const startDateStr = fromDateTime.toISOString().split("T")[0];
-  const endDateStr = toDateTime.toISOString().split("T")[0];
-
-  try {
-    const query = `?startDate=${startDateStr}&startTime=${startTime}&endDate=${endDateStr}&endTime=${endTime}&parameter=${parameter}`;
-    const response = await fetch(`${environment.API_BASE_URL}/sensorReadingsByDateTime${query}`);
-    const data = await response.json();
-
-        if (!response.ok) {
-        showAlert(data.error || "Failed to fetch sensor data");
+      if (!response.ok) {
+        Alert.alert(data.error || "Failed to fetch sensor data");
         return;
       }
 
-    setSensorData(data);
-    setFilteredData(data); // initially show all
-  } catch (err) {
-    console.error(err);
-      showAlert("Error connecting to server");
-  }
-};
-
-
+      setSensorData(data);
+      setFilteredData(data); // initially show all
+    } catch (err) {
+      console.error(err);
+      Alert.alert("Error connecting to server");
+    }
+  };
 
   // Filter chart data based on selected filters
   useEffect(() => {
@@ -166,16 +180,88 @@ const rotateToPortrait = async () => {
     }
   };
   const [isHorizontalModal, setIsHorizontalModal] = useState(false);
+  // Toggle filters
+
+
+
+  // Downsample if too many points
+  const MAX_POINTS = 600;
+  const reducedData = useMemo(() => {
+    if (filteredData.length <= MAX_POINTS) return filteredData;
+    const step = Math.ceil(filteredData.length / MAX_POINTS);
+    return filteredData.filter((_, i) => i % step === 0);
+  }, [filteredData]);
+
+
+
+  // HTML + Chart.js code
+  const chartHtml = useMemo(
+    () => `
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  body { margin:0; background:#061420; }
+  canvas { width:100%; height:100%; }
+</style>
+</head>
+<body>
+<canvas id="chart"></canvas>
+<script>
+  const ctx = document.getElementById('chart').getContext('2d');
+  const data = ${JSON.stringify(chartData)};
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: data.labels,
+      datasets: data.datasets.map(ds => ({
+        label: ds.label,
+        data: ds.data,
+        borderColor: ds.borderColor,
+        borderWidth: 2,
+        pointRadius: 0,
+        tension: 0.3
+      }))
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      plugins: {
+           legend: {
+      display: false // ✅ hides the default legend / filters
+    }
+      },
+     scales: {
+        x: {
+          ticks: {
+            color: '#94a3b8',
+            maxTicksLimit: 8,
+            maxRotation: 90, // rotate labels more
+            minRotation: 45
+          }
+        },
+        y: { ticks: { color: '#94a3b8' } }
+      }
+    }
+  });
+</script>
+</body>
+</html>
+`,
+    [chartData]
+  );
 
   return (
-    <LinearGradient colors={["#040e16", "#061420"]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} className="flex-1">
+        <LinearGradient colors={["#040e16", "#061420"]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} className="flex-1">
       {/* HEADER */}
       <View className="flex-row justify-between items-center p-4 bg-[#040e16]/50 rounded-b-xl">
         <View className="flex-row items-center gap-3">
           <TouchableOpacity
             activeOpacity={0.7}
             onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
-            
             className="bg-gradient-to-tr from-cyan-500 to-blue-500 w-10 h-10 rounded-lg flex items-center justify-center"
           >
             <MaterialIcons name="sensors" size={24} color="#fff" />
@@ -250,17 +336,7 @@ const rotateToPortrait = async () => {
         </View>
 
       <View
-  style={{
-    width: screenWidth,
-    marginHorizontal: 10,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#0b1d2c",
-    padding: 10,
-    backgroundColor: "#061420",
-    marginBottom: 20,
-    position: "relative",
-  }}
+      className=""
 >
   {/* Fullscreen Button */}
   <TouchableOpacity
@@ -279,24 +355,23 @@ const rotateToPortrait = async () => {
   </TouchableOpacity>
 
   {chartData.labels.length > 0 ? (
-    <LineChart
-      data={chartData}
-      width={screenWidth - 20}
-      height={250}
-        xLabelsOffset={20}
-        verticalLabelRotation={-40}
-      chartConfig={{
-        backgroundColor: "#061420",
-        backgroundGradientFrom: "#061420",
-        backgroundGradientTo: "#040e16",
-        decimalPlaces: 1,
-        color: (opacity = 1, index) => chartData.datasets[index ?? 0].color(),
-        labelColor: () => "#64748b",
-      }}
-      
-      bezier
-      style={{ borderRadius: 16 }}
-    />
+   
+      <View
+        style={{
+          height: 500,
+          borderRadius: 16,
+          overflow: "hidden",
+        }}
+      >
+        <WebView
+          ref={webViewRef}
+          originWhitelist={["*"]}
+          source={{ html: chartHtml }}
+          javaScriptEnabled
+          domStorageEnabled
+          scrollEnabled={true}
+        />
+      </View>
   ) : (
     <Text className="text-center text-gray-400 mt-6">No data yet</Text>
   )}
@@ -306,7 +381,8 @@ const rotateToPortrait = async () => {
     Sensor History
   </Text>
 </View>
-
+   
+      
       </ScrollView>
 
       {/* DATE PICKER */}
@@ -345,59 +421,14 @@ const rotateToPortrait = async () => {
             </View>
           </View>
         </Modal>
-
-        
       )}
-
-        <Modal
-              visible={showError}
-              transparent
-              animationType="fade"
-              onRequestClose={() => setShowError(false)}
-            >
-              <View
-                style={{
-                  flex: 1,
-                  justifyContent: "center",
-                  alignItems: "center",
-                  backgroundColor: "rgba(0,0,0,0.5)",
-                }}
-              >
-                <View
-                  style={{
-                    backgroundColor: "#071927",
-                    borderColor: "#2dab87",
-                    borderWidth: 1,
-                    padding: 20,
-                    borderRadius: 16,
-                    width: "80%",
-                    alignItems: "center",
-                  }}
-                >
-                  <Text style={{ color: "#2dab87", fontWeight: "bold", textAlign: "center", fontSize: 16 }}>
-                      {errorMsg}
-                  </Text>
-      
-                  <TouchableOpacity
-                    onPress={() => setShowError(false)}
-                    style={{
-                      marginTop: 16,
-                      backgroundColor: "#2dab87",
-                      paddingVertical: 10,
-                      paddingHorizontal: 20,
-                      borderRadius: 12,
-                    }}
-                  >
-                    <Text style={{ color: "#fff", fontWeight: "bold" }}>OK</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </Modal>
     </LinearGradient>
+
+
+
+
   );
 }
-
-// SMALL UI COMPONENTS
 const DateBox = ({ date, onPress }: any) => (
   <TouchableOpacity onPress={onPress} className="bg-[#0a2234] border border-emerald-500 rounded-lg p-8 py-3">
     <Text className="text-white text-xs font-semibold">{date.toLocaleDateString()}</Text>
@@ -411,4 +442,3 @@ const TimeBox = ({ value, onPress }: any) => (
 );
 
 const Colon = () => <Text className="text-white font-semibold">:</Text>;
-

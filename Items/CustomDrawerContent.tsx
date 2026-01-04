@@ -68,7 +68,6 @@ export default function CustomDrawerContent(props: any) {
     try {
       await AsyncStorage.clear();
     await new Promise((resolve) => {
-      dispatch(logoutUser());
       setTimeout(resolve, 100); // small delay for Redux to finish
     });      navigation.reset({
         index: 0,
@@ -120,6 +119,41 @@ export default function CustomDrawerContent(props: any) {
   onPress={() => navigation.navigate("Analyze")}
 >
   <Text className="text-white font-semibold">Analyze</Text>
+</TouchableOpacity>
+
+<TouchableOpacity
+  className={`p-4 rounded-md mt-6 mb-2 ${
+    navigation.getState().routes[navigation.getState().index].name === "ChartOption2"
+      ? "bg-[#09253a]"
+      : ""
+  }`}
+  onPress={() => navigation.navigate("ChartOption2")}
+>
+  <Text className="text-white font-semibold">Analyze2</Text>
+</TouchableOpacity>
+
+<TouchableOpacity
+  className={`p-4 rounded-md mt-6 mb-2 ${
+    navigation.getState().routes[navigation.getState().index].name === "ChartOption3"
+      ? "bg-[#09253a]"
+      : ""
+  }`}
+  onPress={() => navigation.navigate("ChartOption3")}
+>
+  <Text className="text-white font-semibold">Analyze3</Text>
+</TouchableOpacity>
+
+
+
+<TouchableOpacity
+  className={`p-4 rounded-md mt-6 mb-2 ${
+    navigation.getState().routes[navigation.getState().index].name === "ChartOption4"
+      ? "bg-[#09253a]"
+      : ""
+  }`}
+  onPress={() => navigation.navigate("ChartOption4")}
+>
+  <Text className="text-white font-semibold">Analyze4</Text>
 </TouchableOpacity>
 
 
