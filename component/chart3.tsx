@@ -12,10 +12,15 @@ import {
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialIcons } from "@expo/vector-icons";
-import { useNavigation, DrawerActions, useFocusEffect } from "@react-navigation/native";
+import {
+  useNavigation,
+  DrawerActions,
+  useFocusEffect,
+} from "@react-navigation/native";
 import { environment } from "@/environment/environment";
 import { LineChart } from "react-native-chart-kit";
 import * as ScreenOrientation from "expo-screen-orientation";
+import LottieView from "lottie-react-native";
 
 const HOURS = Array.from({ length: 24 }, (_, i) =>
   i.toString().padStart(2, "0")
@@ -42,22 +47,25 @@ export default function AnalyzeScreen() {
   const [date, setDate] = useState(new Date()); // single date
   // const [fromTime, setFromTime] = useState({ h: "14", m: "57", s: "19" });
   // const [toTime, setToTime] = useState({ h: "14", m: "58", s: "19" });
-const getCurrentTime = () => {
-  const now = new Date();
-  return {
-    h: now.getHours().toString().padStart(2, "0"),
-    m: now.getMinutes().toString().padStart(2, "0"),
-    s: now.getSeconds().toString().padStart(2, "0"),
+  const getCurrentTime = () => {
+    const now = new Date();
+    return {
+      h: now.getHours().toString().padStart(2, "0"),
+      m: now.getMinutes().toString().padStart(2, "0"),
+      s: now.getSeconds().toString().padStart(2, "0"),
+    };
   };
-};
   const [fromTime, setFromTime] = useState(getCurrentTime());
-const [toTime, setToTime] = useState(getCurrentTime());
- useFocusEffect(
+  const [toTime, setToTime] = useState(getCurrentTime());
+  useFocusEffect(
     useCallback(() => {
       // Update time immediately on focus
-      setFromTime(getCurrentTime())
-      setToTime(getCurrentTime())
-      setFilteredData([])
+      setFromTime(getCurrentTime());
+      setToTime(getCurrentTime());
+      setFilteredData([]);
+      setFilters([]);
+      setParams([]);
+      setSensorData([]);
     }, [])
   );
 
@@ -76,8 +84,8 @@ const [toTime, setToTime] = useState(getCurrentTime());
   const navigation = useNavigation();
   const [errorMsg, setErrorMsg] = useState("");
   const [showError, setShowError] = useState(false);
-
-    const showAlert = (message: string) => {
+  const [loading, setLoading] = useState(false);
+  const showAlert = (message: string) => {
     setErrorMsg(message);
     setShowError(true);
   };
@@ -106,15 +114,14 @@ const [toTime, setToTime] = useState(getCurrentTime());
       return;
     }
 
-
     const startSec = timeToSeconds(fromTime);
     const endSec = timeToSeconds(toTime);
 
     if (endSec - startSec > 300) {
-    showAlert("Time range cannot exceed 5 minutes (300 seconds)");
+      showAlert("Time range cannot exceed 5 minutes (300 seconds)");
       return;
     }
-
+    setLoading(true);
     const startTime = formatTime(fromTime);
     const endTime = formatTime(toTime);
     const parameter = params[0];
@@ -128,7 +135,7 @@ const [toTime, setToTime] = useState(getCurrentTime());
       const data = await response.json();
 
       if (!response.ok) {
-       showAlert(data.error || "Failed to fetch sensor data");
+        showAlert(data.error || "Failed to fetch sensor data");
         return;
       }
 
@@ -137,6 +144,8 @@ const [toTime, setToTime] = useState(getCurrentTime());
     } catch (err) {
       console.error(err);
       showAlert("Error connecting to server");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -236,7 +245,7 @@ const [toTime, setToTime] = useState(getCurrentTime());
             />
           </View>
           <View className="flex-1 items-center justify-center mb-4">
-                                <Text className="text-white mb-2 font-semibold ">From</Text>
+            <Text className="text-white mb-2 font-semibold ">From</Text>
 
             <View className="flex-row items-center justify-center mb-4 ">
               <TimeBox
@@ -254,7 +263,7 @@ const [toTime, setToTime] = useState(getCurrentTime());
                 onPress={() => setPicker({ type: "s", target: "from" })}
               />
             </View>
-               <Text className="text-white mb-2 font-semibold">To</Text>
+            <Text className="text-white mb-2 font-semibold">To</Text>
             <View className="flex-row items-center justify-center ">
               <TimeBox
                 value={toTime.h}
@@ -274,10 +283,9 @@ const [toTime, setToTime] = useState(getCurrentTime());
           </View>
 
           {/* PARAMETERS */}
-
         </View>
 
-                <View className="bg-[#071b2a] border border-[#0b2a3c] rounded-2xl p-4 mb-4 ">
+        <View className="bg-[#071b2a] border border-[#0b2a3c] rounded-2xl p-4 mb-4 ">
           <Text className="text-white  text-lg text-center font-semibold mb-3">
             Select Parameters
           </Text>
@@ -305,15 +313,26 @@ const [toTime, setToTime] = useState(getCurrentTime());
           >
             <Text className="text-white font-semibold">Get Data</Text>
           </TouchableOpacity>
-                </View>
+        </View>
 
         {/* DATA FILTER */}
         <View className="bg-[#071b2a] border border-[#0b2a3c] rounded-2xl p-4 mb-6">
+          <View className="items-center ">
+            <LottieView
+              source={{
+                uri: "https://lottie.host/014e40d0-aeba-4241-8f35-1d3b7cd3a6e9/6JfMsDElEc.lottie",
+              }}
+              autoPlay
+              loop
+              style={{ width: 500, height: 200 }}
+              speed={1}
+            />
+          </View>
           <Text className="text-white text-lg font-semibold mb-2 text-center">
             Data Filter
           </Text>
           <View className="flex-row flex-wrap gap-3 justify-center">
-                  {SENSOR_KEYS.map(f => (
+            {SENSOR_KEYS.map((f) => (
               <TouchableOpacity
                 key={f.label}
                 onPress={() => toggleFilter(f.label)}
@@ -323,7 +342,9 @@ const [toTime, setToTime] = useState(getCurrentTime());
                   borderRadius: 12,
                   borderWidth: filters.includes(f.label) ? 1 : 0,
                   borderColor: CHART_COLORS[f.label],
-                  backgroundColor: filters.includes(f.label) ? CHART_COLORS[f.label] + "33" : "#0a2234",
+                  backgroundColor: filters.includes(f.label)
+                    ? CHART_COLORS[f.label] + "33"
+                    : "#0a2234",
                 }}
               >
                 <Text className="text-white text-xs font-semibold">
@@ -355,12 +376,20 @@ const [toTime, setToTime] = useState(getCurrentTime());
               top: 10,
               right: 10,
               backgroundColor: "#1e293b",
-              padding: 6,
-              borderRadius: 6,
+              width: 36, // fixed width
+              height: 36, // fixed height
+              borderRadius: 8,
               zIndex: 10,
+              justifyContent: "center",
+              alignItems: "center", // center the child
             }}
           >
-            <Text style={{ color: "#fff", fontWeight: "bold" }}>⤢</Text>
+            <Text
+              className="-mt-2"
+              style={{ color: "#fff", fontWeight: "bold", fontSize: 20 }}
+            >
+              ⤢
+            </Text>
           </TouchableOpacity>
 
           {chartData.labels.length > 0 ? (
@@ -378,10 +407,10 @@ const [toTime, setToTime] = useState(getCurrentTime());
                 color: (opacity = 1, index) =>
                   chartData.datasets[index ?? 0].color(),
                 labelColor: () => "#64748b",
-                   propsForBackgroundLines: {
-      stroke: "#0b2a3c", // custom grid line color
-      strokeDasharray: "", // solid lines, or "4,2" for dashed
-    },
+                propsForBackgroundLines: {
+                  stroke: "#0b2a3c", // custom grid line color
+                  strokeDasharray: "", // solid lines, or "4,2" for dashed
+                },
               }}
               bezier
               style={{ borderRadius: 16 }}
@@ -441,50 +470,88 @@ const [toTime, setToTime] = useState(getCurrentTime());
         </Modal>
       )}
 
-          <Modal
-                    visible={showError}
-                    transparent
-                    animationType="fade"
-                    onRequestClose={() => setShowError(false)}
-                  >
-                    <View
-                      style={{
-                        flex: 1,
-                        justifyContent: "center",
-                        alignItems: "center",
-                        backgroundColor: "rgba(0,0,0,0.5)",
-                      }}
-                    >
-                      <View
-                        style={{
-                          backgroundColor: "#071927",
-                          borderColor: "#2dab87",
-                          borderWidth: 1,
-                          padding: 20,
-                          borderRadius: 16,
-                          width: "80%",
-                          alignItems: "center",
-                        }}
-                      >
-                        <Text style={{ color: "#2dab87", fontWeight: "bold", textAlign: "center", fontSize: 16 }}>
-                            {errorMsg}
-                        </Text>
-            
-                        <TouchableOpacity
-                          onPress={() => setShowError(false)}
-                          style={{
-                            marginTop: 16,
-                            backgroundColor: "#2dab87",
-                            paddingVertical: 10,
-                            paddingHorizontal: 20,
-                            borderRadius: 12,
-                          }}
-                        >
-                          <Text style={{ color: "#fff", fontWeight: "bold" }}>OK</Text>
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-                  </Modal>
+      <Modal
+        visible={showError}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowError(false)}
+      >
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            backgroundColor: "rgba(0,0,0,0.5)",
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: "#071927",
+              borderColor: "#2dab87",
+              borderWidth: 1,
+              padding: 20,
+              borderRadius: 16,
+              width: "80%",
+              alignItems: "center",
+            }}
+          >
+            <Text
+              style={{
+                color: "#2dab87",
+                fontWeight: "bold",
+                textAlign: "center",
+                fontSize: 16,
+              }}
+            >
+              {errorMsg}
+            </Text>
+
+            <TouchableOpacity
+              onPress={() => setShowError(false)}
+              style={{
+                marginTop: 16,
+                backgroundColor: "#2dab87",
+                paddingVertical: 10,
+                paddingHorizontal: 20,
+                borderRadius: 12,
+              }}
+            >
+              <Text style={{ color: "#fff", fontWeight: "bold" }}>OK</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {loading && (
+        <View
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            justifyContent: "center",
+            alignItems: "center",
+            backgroundColor: "rgba(0,0,0,0.3)",
+            zIndex: 10,
+          }}
+        >
+          <LottieView
+            source={{
+              uri: "https://assets1.lottiefiles.com/packages/lf20_usmfx6bp.json",
+            }}
+            autoPlay
+            loop
+            style={{ width: 200, height: 200 }}
+            colorFilters={[
+              {
+                keypath: "*", // apply to all shapes
+                color: "#10b981",
+              },
+            ]}
+          />
+        </View>
+      )}
     </LinearGradient>
   );
 }
