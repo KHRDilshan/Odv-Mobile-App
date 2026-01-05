@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "ODV Project LAB - DS18B20",
-    "slug": "ODV Project LAB - DS18B20",
+    "slug": "ODVProjectLAB",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/favicon.png",
@@ -20,7 +20,7 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/favicon.png",
         "backgroundColor": "#ffffff",
-         "permissions": [
+        "permissions": [
           "INTERNET",
           "ACCESS_WIFI_STATE",
           "CHANGE_WIFI_STATE",
@@ -36,10 +36,10 @@
     },
     "extra": {
       "eas": {
-        "projectId": "7507f302-7a45-4bb6-9139-b8e13e951982"
+        "projectId": "fedf6fa3-0f03-45d7-ae78-f4fb143461b6"
       }
     },
-      "plugins": [
+    "plugins": [
       [
         "expo-screen-orientation",
         {

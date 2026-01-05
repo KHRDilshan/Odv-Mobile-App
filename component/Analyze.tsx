@@ -44,9 +44,6 @@ const CHART_COLORS: { [key: string]: string } = {
 export default function AnalyzeScreen() {
   const [fromDate, setFromDate] = useState(new Date());
   const [toDate, setToDate] = useState(new Date());
-  // const [fromTime, setFromTime] = useState({ h: "14", m: "57", s: "19" });
-  // const [toTime, setToTime] = useState({ h: "14", m: "58", s: "19" });
-
   const [showDate, setShowDate] = useState<"from" | "to" | null>(null);
   const [picker, setPicker] = useState<{
     type: "h" | "m" | "s";
@@ -54,9 +51,9 @@ export default function AnalyzeScreen() {
   } | null>(null);
 
   const [params, setParams] = useState<string[]>([]);
-  const [filters, setFilters] = useState<string[]>([]); // active filters
+  const [filters, setFilters] = useState<string[]>([]); 
   const [sensorData, setSensorData] = useState<any[]>([]);
-  const [filteredData, setFilteredData] = useState<any[]>([]); // chart filtered data
+  const [filteredData, setFilteredData] = useState<any[]>([]); 
 
   const screenWidth = Dimensions.get("window").width - 40;
   const navigation = useNavigation();
@@ -80,7 +77,6 @@ export default function AnalyzeScreen() {
   const [toTime, setToTime] = useState(getCurrentTime());
   useFocusEffect(
     useCallback(() => {
-      // Update time immediately on focus
       setFromTime(getCurrentTime());
       setToTime(getCurrentTime());
       setFilteredData([]);
@@ -90,17 +86,14 @@ export default function AnalyzeScreen() {
     }, [])
   );
 
-  // Format time object to HH:MM:SS string
   const formatTime = (time: { h: string; m: string; s: string }) =>
     `${time.h}:${time.m}:${time.s}`;
 
-  // Select single parameter
   const selectSingle = (value: string, list: string[], set: any) => {
     if (list.includes(value)) set([]);
     else set([value]);
   };
 
-  // Toggle filters like JS version
   const toggleFilter = (filter: string) => {
     setFilters((prev) =>
       prev.includes(filter)
@@ -115,7 +108,6 @@ export default function AnalyzeScreen() {
       return;
     }
 
-    // Construct full Date objects combining date and time
     const fromDateTime = new Date(fromDate);
     fromDateTime.setHours(Number(fromTime.h));
     fromDateTime.setMinutes(Number(fromTime.m));
@@ -154,16 +146,15 @@ export default function AnalyzeScreen() {
       }
 
       setSensorData(data);
-      setFilteredData(data); // initially show all
+      setFilteredData(data); 
     } catch (err) {
       console.error(err);
       showAlert("Error connecting to server");
     } finally {
-      setLoading(false); // ✅ stop loader
+      setLoading(false); 
     }
   };
 
-  // Filter chart data based on selected filters
   useEffect(() => {
     if (!filters.length) setFilteredData(sensorData);
     else {
@@ -181,7 +172,6 @@ export default function AnalyzeScreen() {
     }
   }, [filters, sensorData]);
 
-  // Prepare chart data
   const chartData = {
     labels: filteredData.map((item) => item.time.slice(0, 20)), // HH:MM
     datasets: SENSOR_KEYS.filter(
@@ -230,7 +220,6 @@ export default function AnalyzeScreen() {
       end={{ x: 0, y: 1 }}
       className="flex-1"
     >
-      {/* HEADER */}
       <View className="flex-row justify-between items-center p-4 bg-[#040e16]/50 rounded-b-xl">
         <View className="flex-row items-center gap-3">
           <TouchableOpacity
@@ -251,13 +240,11 @@ export default function AnalyzeScreen() {
       </View>
 
       <ScrollView className="px-4">
-        {/* TIME SELECTION */}
         <View className="bg-[#071b2a] border border-[#0b2a3c] rounded-2xl p-4 mb-4">
           <Text className="text-white text-lg font-semibold text-center mb-2">
             Select Time Range
           </Text>
 
-          {/* Date & Time Pickers */}
           <Text className="text-white mb-2 font-semibold">From</Text>
           <View className="flex-row items-center justify-center mb-4">
             <View className="mr-2">
@@ -305,7 +292,6 @@ export default function AnalyzeScreen() {
             </View>
           </View>
 
-          {/* PARAMETERS */}
           <Text className="text-white text-center font-semibold mb-3">
             Select Parameters
           </Text>
@@ -335,7 +321,6 @@ export default function AnalyzeScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* DATA FILTER */}
         <View className="bg-[#071b2a] border border-[#0b2a3c] rounded-2xl p-4 mb-6">
           <View className="items-center ">
             <LottieView
@@ -395,12 +380,12 @@ export default function AnalyzeScreen() {
               top: 10,
               right: 10,
               backgroundColor: "#1e293b",
-              width: 36, // fixed width
-              height: 36, // fixed height
+              width: 36,
+              height: 36, 
               borderRadius: 8,
               zIndex: 10,
               justifyContent: "center",
-              alignItems: "center", // center the child
+              alignItems: "center", 
             }}
           >
             <Text
@@ -427,8 +412,8 @@ export default function AnalyzeScreen() {
                   chartData.datasets[index ?? 0].color(),
                 labelColor: () => "#64748b",
                 propsForBackgroundLines: {
-                  stroke: "#0b2a3c", // custom grid line color
-                  strokeDasharray: "", // solid lines, or "4,2" for dashed
+                  stroke: "#0b2a3c", 
+                  strokeDasharray: "", 
                 },
               }}
               bezier
@@ -450,7 +435,6 @@ export default function AnalyzeScreen() {
         </View>
       </ScrollView>
 
-      {/* DATE PICKER */}
       {showDate && (
         <DateTimePicker
           value={showDate === "from" ? fromDate : toDate}
@@ -462,7 +446,6 @@ export default function AnalyzeScreen() {
         />
       )}
 
-      {/* TIME PICKER MODAL */}
       {picker && (
         <Modal transparent animationType="fade">
           <View className="flex-1 bg-black/70 items-center justify-center">
@@ -567,7 +550,7 @@ export default function AnalyzeScreen() {
             style={{ width: 200, height: 200 }}
             colorFilters={[
               {
-                keypath: "*", // apply to all shapes
+                keypath: "*", 
                 color: "#10b981",
               },
             ]}
@@ -578,7 +561,6 @@ export default function AnalyzeScreen() {
   );
 }
 
-// SMALL UI COMPONENTS
 const DateBox = ({ date, onPress }: any) => (
   <TouchableOpacity
     onPress={onPress}

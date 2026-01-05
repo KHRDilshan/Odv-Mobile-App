@@ -35,32 +35,13 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
   const [showError, setShowError] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  // ✅ Check saved credentials on mount
-  // useEffect(() => {
-  //   const checkSavedCredentials = async () => {
-  //     try {
-  //       const savedData = await AsyncStorage.getItem("loginData");
-  //       if (savedData) {
-  //         const { username: savedUsername, password: savedPassword } = JSON.parse(savedData);
-  //         if (savedUsername && savedPassword) {
-  //           // Auto-login
-  //           navigation.navigate("MainDrawer", { screen: "Dashboard" });
-  //         }
-  //       }
-  //     } catch (e) {
-  //       console.log("Error reading saved credentials", e);
-  //     }
-  //   };
-  //   checkSavedCredentials();
-  // }, []);
-
   const showAlert = (message: string) => {
     setError(message);
     setShowError(true);
   };
 
   const handleLogin = async () => {
-    Keyboard.dismiss()
+    Keyboard.dismiss();
     if (!username || !password) {
       showAlert("Username and password are required");
       return;
@@ -82,14 +63,11 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
         showAlert(data.error || "Login failed");
         return;
       }
-
-      // ✅ Save credentials as one object
       await AsyncStorage.setItem(
         "loginData",
         JSON.stringify({ username, password })
       );
 
-      // Navigate to Dashboard
       navigation.navigate("MainDrawer", { screen: "Dashboard" });
     } catch (err) {
       showAlert("Server connection failed");
@@ -97,19 +75,18 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
       setLoading(false);
     }
   };
-useEffect(() => {
-  const backAction = () => {
-    // do nothing
-    return true; // prevents default behavior
-  };
+  useEffect(() => {
+    const backAction = () => {
+      return true;
+    };
 
-  const backHandler = BackHandler.addEventListener(
-    "hardwareBackPress",
-    backAction
-  );
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      backAction
+    );
 
-  return () => backHandler.remove();
-}, []);
+    return () => backHandler.remove();
+  }, []);
   return (
     <LinearGradient
       colors={["#040e16", "#061420"]}
@@ -122,7 +99,11 @@ useEffect(() => {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         <ScrollView
-          contentContainerStyle={{ flexGrow: 1, justifyContent: "center", alignItems: "center" }}
+          contentContainerStyle={{
+            flexGrow: 1,
+            justifyContent: "center",
+            alignItems: "center",
+          }}
           keyboardShouldPersistTaps="handled"
         >
           <StatusBar barStyle="light-content" />
@@ -133,10 +114,19 @@ useEffect(() => {
             resizeMode="contain"
           />
 
-          <Text style={{ color: "#fff", fontSize: 28, fontWeight: "bold", letterSpacing: 2 }}>
+          <Text
+            style={{
+              color: "#fff",
+              fontSize: 28,
+              fontWeight: "bold",
+              letterSpacing: 2,
+            }}
+          >
             ODV - Project LAB
           </Text>
-          <Text style={{ color: "#2dab87", fontSize: 22, fontWeight: "bold" }}>DS18B20</Text>
+          <Text style={{ color: "#2dab87", fontSize: 22, fontWeight: "bold" }}>
+            DS18B20
+          </Text>
 
           <LinearGradient
             colors={["#040e16", "#071927"]}
@@ -152,7 +142,10 @@ useEffect(() => {
             }}
           >
             {/* USERNAME */}
-            <Text className="text-base" style={{ color: "#9ca3af", fontSize: 12, letterSpacing: 1 }}>
+            <Text
+              className="text-base"
+              style={{ color: "#9ca3af", fontSize: 12, letterSpacing: 1 }}
+            >
               USER NAME
             </Text>
             <View
@@ -169,7 +162,7 @@ useEffect(() => {
             >
               <Ionicons name="person" size={18} color="#9ca3af" />
               <TextInput
-              className="text-base"
+                className="text-base"
                 placeholder="Enter username"
                 placeholderTextColor="#6b7280"
                 style={{ flex: 1, color: "#fff", marginLeft: 8 }}
@@ -179,55 +172,51 @@ useEffect(() => {
               />
             </View>
 
-{/* PASSWORD */}
-<Text
-  className="text-base"
-  style={{
-    color: "#9ca3af",
-    fontSize: 12,
-    letterSpacing: 1,
-    marginTop: 16,
-  }}
->
-  PASSWORD
-</Text>
+            <Text
+              className="text-base"
+              style={{
+                color: "#9ca3af",
+                fontSize: 12,
+                letterSpacing: 1,
+                marginTop: 16,
+              }}
+            >
+              PASSWORD
+            </Text>
 
-<View
-  style={{
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#374151",
-    borderRadius: 16,
-    paddingHorizontal: 12,
-    height: 48,
-    marginTop: 8,
-  }}
->
-  <Ionicons name="lock-closed" size={18} color="#9ca3af" />
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                borderWidth: 1,
+                borderColor: "#374151",
+                borderRadius: 16,
+                paddingHorizontal: 12,
+                height: 48,
+                marginTop: 8,
+              }}
+            >
+              <Ionicons name="lock-closed" size={18} color="#9ca3af" />
 
-  <TextInput
-    placeholder="••••••••"
-    placeholderTextColor="#6b7280"
-    secureTextEntry={!showPassword} // 👈 toggle here
-    style={{ flex: 1, color: "#fff", marginLeft: 8 }}
-    value={password}
-    onChangeText={setPassword}
-    className="text-base"
-  />
+              <TextInput
+                placeholder="••••••••"
+                placeholderTextColor="#6b7280"
+                secureTextEntry={!showPassword} // 👈 toggle here
+                style={{ flex: 1, color: "#fff", marginLeft: 8 }}
+                value={password}
+                onChangeText={setPassword}
+                className="text-base"
+              />
 
-  {/* 👁️ Eye Icon */}
-  <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-    <Ionicons
-      name={showPassword ? "eye-off" : "eye"}
-      size={20}
-      color="#9ca3af"
-    />
-  </TouchableOpacity>
-</View>
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                <Ionicons
+                  name={showPassword ? "eye-off" : "eye"}
+                  size={20}
+                  color="#9ca3af"
+                />
+              </TouchableOpacity>
+            </View>
 
-
-            {/* LOGIN BUTTON */}
             <TouchableOpacity
               onPress={handleLogin}
               disabled={loading}
@@ -247,7 +236,10 @@ useEffect(() => {
               ) : (
                 <>
                   <MaterialIcons name="settings" size={20} color="#fff" />
-                  <Text style={{ color: "#fff", fontWeight: "bold", marginLeft: 8 }} className="text-base">
+                  <Text
+                    style={{ color: "#fff", fontWeight: "bold", marginLeft: 8 }}
+                    className="text-base"
+                  >
                     LOGING TO SESSION
                   </Text>
                 </>
@@ -257,7 +249,6 @@ useEffect(() => {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* ✅ ERROR ALERT POPUP */}
       <Modal
         visible={showError}
         transparent
@@ -283,7 +274,14 @@ useEffect(() => {
               alignItems: "center",
             }}
           >
-            <Text style={{ color: "#2dab87", fontWeight: "bold", textAlign: "center", fontSize: 16 }}>
+            <Text
+              style={{
+                color: "#2dab87",
+                fontWeight: "bold",
+                textAlign: "center",
+                fontSize: 16,
+              }}
+            >
               {error}
             </Text>
 

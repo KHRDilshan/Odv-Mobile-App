@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -11,17 +11,13 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { LineChart } from "react-native-chart-kit";
 import Svg, {
   Path,
-  Defs,
-  Stop,
   G,
   Circle,
   Text as SvgText,
 } from "react-native-svg";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { environment } from "@/environment/environment";
 import {
-  useNavigation,
   DrawerActions,
   useFocusEffect,
 } from "@react-navigation/native";
@@ -46,8 +42,6 @@ interface DashboardProps {
   navigation: DashboardNavigationProps;
 }
 const screenWidth = Dimensions.get("window").width - 40;
-const GAUGE_WIDTH = 200;
-const GAUGE_HEIGHT = 100;
 const RADIUS = 80;
 const CENTER_X = 100;
 const CENTER_Y = 100;
@@ -80,6 +74,19 @@ const Dashboard: React.FC<DashboardProps> = ({ navigation }) => {
   const [humidity, setHumidity] = useState(0);
   const [pressure, setPressure] = useState(0);
   const [state, setState] = useState("INIT");
+  const scrollRef = useRef<ScrollView>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+
+const scrollToIndex = (index: number) => {
+  const clampedIndex = Math.max(0, Math.min(index, chartItems.length - 1));
+  if (scrollRef.current) {
+    scrollRef.current.scrollTo({
+      x: clampedIndex * (screenWidth ),
+      animated: true,
+    });
+    setActiveIndex(clampedIndex);
+  }
+};
 
   useFocusEffect(
     useCallback(() => {
@@ -108,49 +115,16 @@ const Dashboard: React.FC<DashboardProps> = ({ navigation }) => {
         }
       };
 
-      fetchSensorData(); // fetch immediately on focus
-      const interval = setInterval(fetchSensorData, 1000); // polling every 1s
+      fetchSensorData();
+      const interval = setInterval(fetchSensorData, 1000); 
 
       return () => {
         isMounted = false;
-        clearInterval(interval); // stop polling when screen loses focus
+        clearInterval(interval); 
       };
     }, [])
   );
-  // useEffect(() => {
-  //   let isMounted = true;
 
-  //   const fetchSensorData = async () => {
-  //     try {
-  //       const res= await fetch(`${environment.API_BASE_URL}/sensorReadings`);
-  //         const data = await res.json();
-
-  //       if (!isMounted) return;
-
-  //       const tempLocal = Number(data.temperature_locale);
-
-  //       setLocalTemp(tempLocal);
-  //       setTemperature(Number(data.temperature));
-  //       setHumidity(Number(data.humidity));
-  //       setPressure(Number(data.pressure));
-  //       setState(data.state);
-
-  //       // Gauge
-  //       setNeedleDeg(calculateNeedleAngle(tempLocal));
-
-  //     } catch (err) {
-  //       console.log("Fetch error:", err);
-  //     }
-  //   };
-
-  //   fetchSensorData();               // Initial load
-  //   const interval = setInterval(fetchSensorData, 1000); // 1s polling
-
-  //   return () => {
-  //     isMounted = false;
-  //     clearInterval(interval);
-  //   };
-  // }, [navigation]);
   const [chartWidth, setChartWidth] = useState(
     Dimensions.get("window").width - 40
   );
@@ -160,19 +134,15 @@ const Dashboard: React.FC<DashboardProps> = ({ navigation }) => {
 
       const lockAndUpdate = async () => {
         if (isActive) {
-          // Lock to portrait
           await ScreenOrientation.lockAsync(
             ScreenOrientation.OrientationLock.PORTRAIT
           );
 
-          // Update chart width dynamically
           const width = Dimensions.get("window").width - 40;
           setChartWidth(width);
         }
       };
       lockAndUpdate();
-
-      // Listen for window size changes
       const subscription = Dimensions.addEventListener(
         "change",
         ({ window }) => {
@@ -183,8 +153,8 @@ const Dashboard: React.FC<DashboardProps> = ({ navigation }) => {
       // Cleanup
       return () => {
         isActive = false;
-        ScreenOrientation.unlockAsync(); // unlock rotation
-        subscription?.remove(); // ✅ remove listener correctly
+        ScreenOrientation.unlockAsync(); 
+        subscription?.remove(); 
       };
     }, [])
   );
@@ -223,12 +193,11 @@ const Dashboard: React.FC<DashboardProps> = ({ navigation }) => {
       setTime(formatted);
     };
 
-    updateTime(); // initial
+    updateTime();
     const interval = setInterval(updateTime, 1000);
 
     return () => clearInterval(interval);
   }, []);
-  // Color ranges for the gauge (static zones - 180 degrees total)
   const colorRanges = [
     { min: 0, max: 20, color: "#808080", label: "Cold" },
     { min: 20, max: 50, color: "#e61235", label: "Cool" },
@@ -238,9 +207,7 @@ const Dashboard: React.FC<DashboardProps> = ({ navigation }) => {
     { min: 90, max: 100, color: "#4aff2c", label: "Hot" },
   ];
 
-  // Calculate needle position based on temperature
   const calculateNeedleAngle = (temp: number) => {
-    // Convert temperature to angle (-90 to 90 degrees for 180-degree arc)
     const normalized = temp / 100;
     return -45 + normalized * 180;
   };
@@ -253,7 +220,6 @@ const Dashboard: React.FC<DashboardProps> = ({ navigation }) => {
     };
   };
 
-  // Render the 4 color range arcs (static, 180 degrees total)
   const renderColorRanges = () => {
     return colorRanges.map((range, index) => {
       const startAngle = -180 + (range.min / 100) * 180;
@@ -278,16 +244,13 @@ const Dashboard: React.FC<DashboardProps> = ({ navigation }) => {
     });
   };
 
-  // Render temperature markers
   const renderGaugeMarkers = () => {
     const tempScale = Array.from({ length: 11 }, (_, i) => i * 10);
     return tempScale.map((temp) => {
       const angle = -180 + (temp / 100) * 180;
-      // Tick points
       const innerPoint = getArcPoint(angle, RADIUS - 5);
       const outerPoint = getArcPoint(angle, RADIUS + 5);
 
-      // Label point
       const labelRadius = RADIUS + 20;
       const labelPoint = getArcPoint(angle, labelRadius);
 
@@ -313,15 +276,12 @@ const Dashboard: React.FC<DashboardProps> = ({ navigation }) => {
     });
   };
 
-  // Render the needle
   const renderNeedle = () => {
     return (
       <G>
-        {/* Needle base circle */}
         <Circle cx={CENTER_X} cy={CENTER_Y} r="8" fill="#1e293b" />
         <Circle cx={CENTER_X} cy={CENTER_Y} r="5" fill="#fff" />
 
-        {/* Needle - rotated based on temperature */}
         <G rotation={needleDeg} origin={`${CENTER_X},${CENTER_Y}`}>
           <Path
             d={`M ${CENTER_X} ${CENTER_Y} L ${CENTER_X - 60} ${CENTER_Y - 60}`}
@@ -339,25 +299,12 @@ const Dashboard: React.FC<DashboardProps> = ({ navigation }) => {
       </G>
     );
   };
-
-  // Render color range legend
-  const renderColorRangeLegend = () => {
-    return (
-      <View className="flex-row mt-6">
-        {colorRanges.map((range, index) => (
-          <View key={`legend-${index}`} className="items-center flex-1">
-            <View className="flex-row items-center mb-1">
-              <View
-                className="w-3 h-3 rounded-full"
-                style={{ backgroundColor: range.color, opacity: 0.9 }}
-              />
-            </View>
-          </View>
-        ))}
-      </View>
-    );
-  };
-
+  const chartItems = [
+    { label: "Temperature Local", data: localTempChartData, color: "#10b981" },
+    { label: "Temperature", data: temperatureChartData, color: "#ef4444" },
+    { label: "Pressure", data: pressureChartData, color: "#dd9e36" },
+    { label: "Humidity", data: humidityChartData, color: "#3b82f6" },
+  ];
   return (
     <LinearGradient
       colors={["#040e16", "#061420"]}
@@ -392,7 +339,7 @@ const Dashboard: React.FC<DashboardProps> = ({ navigation }) => {
           end={{ x: 1, y: 0 }}
           className="rounded-2xl p-4 border-2 border-[#0b1d2c]"
         >
-          <Text className="text-white font-semibold ">State</Text>
+          <Text className="text-white font-semibold text-base ">State</Text>
 
           <View className="flex-row items-center justify-between">
             <Text className="text-white text-xl font-bold">{time}</Text>
@@ -433,21 +380,40 @@ const Dashboard: React.FC<DashboardProps> = ({ navigation }) => {
                 <View
                   className={`${
                     state === "ENDTREATMENT"
-                      ? "bg-[#dd9e36]"
+                      ? "bg-[#fdb540]"
                       : "bg-[#dd9e36]/40"
                   }  h-3 w-3 rounded-full`}
                 />
                 <View
                   className={`${
-                    state === "TREATMENT" ? "bg-[#10b981]" : "bg-[#10b981]/40"
+                    state === "TREATMENT" ? "bg-[#13d393]" : "bg-[#10b981]/40"
                   }  h-3 w-3 rounded-full`}
                 />
                 <View
                   className={`${
-                    state === "HEATING" ? "bg-[#ef4444]" : "bg-[#ef4444]/40"
+                    state === "HEATING" ? "bg-[#ff3c3c]" : "bg-[#ef4444]/40"
                   }  h-3 w-3 rounded-full`}
                 />
               </View>
+              {/* <View className="flex-row ">
+  {[
+    { name: "lightbulb", color: "#dd9e36", active: state === "ENDTREATMENT" },
+    { name: "lightbulb", color: "#10b981", active: state === "TREATMENT" },
+    { name: "lightbulb", color: "#ef4444", active: state === "HEATING" },
+  ].map((item, index) => (
+    <MaterialIcons
+      key={index}
+      name="lightbulb"
+      size={20}
+      color={item.active ? item.color : `${item.color}80`} // dim if inactive
+      style={{
+        textShadowColor: item.active ? item.color : "transparent",
+        textShadowOffset: { width: 0, height: 0 },
+        textShadowRadius: item.active ? 6 : 0,
+      }}
+    />
+  ))}
+</View> */}
             </View>
 
             <View className="items-center mt-6">
@@ -473,15 +439,12 @@ const Dashboard: React.FC<DashboardProps> = ({ navigation }) => {
                   {localTemp}°C
                 </Text>
               </View>
-
-              {/* Color range legend */}
             </View>
           </View>
         </LinearGradient>
 
         <View className="space-y-4">
           <View className="flex-row flex-wrap justify-between gap-y-4">
-            {/* Temperature */}
             <LinearGradient
               colors={["#061420", "#040e16"]}
               className="w-[48%] rounded-2xl p-4 border border-[#0b1d2c] justify-center items-center "
@@ -569,8 +532,26 @@ const Dashboard: React.FC<DashboardProps> = ({ navigation }) => {
           </View>
         </View>
 
+<View className="flex-row justify-between -mb-10 z-50  px-10 ">
+  <TouchableOpacity
+    onPress={() => scrollToIndex(activeIndex - 1)}
+    className=""
+  >
+    <MaterialIcons name="arrow-back" size={20} color="#fff" />
+  </TouchableOpacity>
+  <TouchableOpacity
+    onPress={() => scrollToIndex(activeIndex + 1)}
+    className=""
+  >
+    <MaterialIcons name="arrow-forward" size={20} color="#fff" />
+  </TouchableOpacity>
+</View>
+
+
         <ScrollView
+        className=""
           horizontal
+           ref={scrollRef}
           pagingEnabled
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{
@@ -595,7 +576,7 @@ const Dashboard: React.FC<DashboardProps> = ({ navigation }) => {
             <View
               key={index}
               style={{
-                width: screenWidth - 10, // full width minus padding
+                width: screenWidth - 10, 
                 marginHorizontal: 0,
                 borderRadius: 16,
                 borderWidth: 1,
@@ -645,6 +626,7 @@ const Dashboard: React.FC<DashboardProps> = ({ navigation }) => {
             </View>
           ))}
         </ScrollView>
+        
       </ScrollView>
     </LinearGradient>
   );
