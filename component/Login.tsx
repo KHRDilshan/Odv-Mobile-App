@@ -12,6 +12,7 @@ import {
   Platform,
   Modal,
   BackHandler,
+  Keyboard,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
@@ -32,6 +33,7 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showError, setShowError] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // ✅ Check saved credentials on mount
   // useEffect(() => {
@@ -58,6 +60,7 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
   };
 
   const handleLogin = async () => {
+    Keyboard.dismiss()
     if (!username || !password) {
       showAlert("Username and password are required");
       return;
@@ -176,33 +179,53 @@ useEffect(() => {
               />
             </View>
 
-            {/* PASSWORD */}
-            <Text className="text-base" style={{ color: "#9ca3af", fontSize: 12, letterSpacing: 1, marginTop: 16 }}>
-              PASSWORD
-            </Text>
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                borderWidth: 1,
-                borderColor: "#374151",
-                borderRadius: 16,
-                paddingHorizontal: 12,
-                height: 48,
-                marginTop: 8,
-              }}
-            >
-              <Ionicons name="lock-closed" size={18} color="#9ca3af" />
-              <TextInput
-                placeholder="••••••••"
-                placeholderTextColor="#6b7280"
-                secureTextEntry
-                style={{ flex: 1, color: "#fff", marginLeft: 8 }}
-                value={password}
-                onChangeText={setPassword}
-                className="text-base"
-              />
-            </View>
+{/* PASSWORD */}
+<Text
+  className="text-base"
+  style={{
+    color: "#9ca3af",
+    fontSize: 12,
+    letterSpacing: 1,
+    marginTop: 16,
+  }}
+>
+  PASSWORD
+</Text>
+
+<View
+  style={{
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#374151",
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    height: 48,
+    marginTop: 8,
+  }}
+>
+  <Ionicons name="lock-closed" size={18} color="#9ca3af" />
+
+  <TextInput
+    placeholder="••••••••"
+    placeholderTextColor="#6b7280"
+    secureTextEntry={!showPassword} // 👈 toggle here
+    style={{ flex: 1, color: "#fff", marginLeft: 8 }}
+    value={password}
+    onChangeText={setPassword}
+    className="text-base"
+  />
+
+  {/* 👁️ Eye Icon */}
+  <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+    <Ionicons
+      name={showPassword ? "eye-off" : "eye"}
+      size={20}
+      color="#9ca3af"
+    />
+  </TouchableOpacity>
+</View>
+
 
             {/* LOGIN BUTTON */}
             <TouchableOpacity

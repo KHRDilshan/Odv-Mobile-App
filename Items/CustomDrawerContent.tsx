@@ -144,19 +144,6 @@ export default function CustomDrawerContent(props: any) {
 </TouchableOpacity>
 
 
-
-<TouchableOpacity
-  className={`p-4 rounded-md mt-6 mb-2 ${
-    navigation.getState().routes[navigation.getState().index].name === "ChartOption4"
-      ? "bg-[#09253a]"
-      : ""
-  }`}
-  onPress={() => navigation.navigate("ChartOption4")}
->
-  <Text className="text-white font-semibold">Analyze4</Text>
-</TouchableOpacity>
-
-
           <View className="flex-1 p-4 ">
 
 

@@ -377,8 +377,13 @@ fill="white"
       {time}
     </Text>
 
-    <View className="w-12 h-12 rounded-full bg-[#222635] items-center justify-center">
-      <MaterialIcons name="power-settings-new" size={30} color="#fff" />
+<View
+  className={`w-12 h-12 rounded-full bg-[#061420]  border-2  border-[#0b1d2c] items-center justify-center`}
+>      <MaterialIcons name="power-settings-new" size={30} color={
+    state === "HEATING" || state === "ENDTREATMENT" || state==="INIT" || state==="REINIT" || "TREATMENT"
+      ? "#10b981"
+      : "white"
+  } />
     </View>
 
   </View>
@@ -395,9 +400,9 @@ fill="white"
           <View className="flex-row justify-between ">
                    <Text className="text-white   -mt-2 text-base font-semibold">Temperature Local</Text>
                    <View className="flex-row gap-1">
-<View className="bg-white h-3 w-3 rounded-full" />
-<View className="bg-white h-3 w-3 rounded-full" />
-<View className="bg-white h-3 w-3 rounded-full" />
+<View className={`${state==="ENDTREATMENT" ? "bg-[#dd9e36]" : "bg-[#dd9e36]/40"}  h-3 w-3 rounded-full`} />
+<View className={`${state==="TREATMENT" ? "bg-[#10b981]" : "bg-[#10b981]/40"}  h-3 w-3 rounded-full`} />
+<View className={`${state==="HEATING" ? "bg-[#ef4444]" : "bg-[#ef4444]/40"}  h-3 w-3 rounded-full`}/>
 
                    </View>
 
@@ -538,6 +543,17 @@ fill="white"
         backgroundColor: "#061420",
       }}
     >
+            <Text
+        style={{
+          textAlign: "center",
+          color: isDark ? "#94a3b8" : "#64748b",
+          marginTop: 2,
+          fontWeight: "500",
+        }}
+        className="mb-4"
+      >
+        {item.label} History
+      </Text>
       {item.data.labels.length > 0 ? (
         <LineChart
           data={item.data}
@@ -558,16 +574,7 @@ fill="white"
       ) : (
         <Text className="text-center text-gray-400 mt-6">No data yet</Text>
       )}
-      <Text
-        style={{
-          textAlign: "center",
-          color: isDark ? "#94a3b8" : "#64748b",
-          marginTop: 8,
-          fontWeight: "500",
-        }}
-      >
-        {item.label} History
-      </Text>
+
     </View>
   ))}
 </ScrollView>

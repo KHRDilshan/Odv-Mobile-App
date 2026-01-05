@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -12,7 +12,7 @@ import {
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialIcons } from "@expo/vector-icons";
-import { useNavigation, DrawerActions } from "@react-navigation/native";
+import { useNavigation, DrawerActions, useFocusEffect } from "@react-navigation/native";
 import { environment } from "@/environment/environment";
 import { LineChart } from "react-native-chart-kit";
 import * as ScreenOrientation from 'expo-screen-orientation';
@@ -26,12 +26,17 @@ const SENSOR_KEYS = [
   { label: "Pressure", key: "pressure", color: "#f59e0b" },
   { label: "Humidity", key: "humidity", color: "#006de8" },
 ];
-
+const CHART_COLORS: { [key: string]: string } = {
+  "Local Temperature": "#10b981",
+  Temperature: "#ef4444",
+  Pressure: "#dd9e36",
+  Humidity: "#3b82f6",
+};
 export default function AnalyzeScreen() {
   const [fromDate, setFromDate] = useState(new Date());
   const [toDate, setToDate] = useState(new Date());
-  const [fromTime, setFromTime] = useState({ h: "14", m: "57", s: "19" });
-  const [toTime, setToTime] = useState({ h: "14", m: "58", s: "19" });
+  // const [fromTime, setFromTime] = useState({ h: "14", m: "57", s: "19" });
+  // const [toTime, setToTime] = useState({ h: "14", m: "58", s: "19" });
 
   const [showDate, setShowDate] = useState<"from" | "to" | null>(null);
   const [picker, setPicker] = useState<{ type: "h" | "m" | "s"; target: "from" | "to" } | null>(null);
@@ -50,6 +55,24 @@ export default function AnalyzeScreen() {
     setErrorMsg(message);
     setShowError(true);
   };
+const getCurrentTime = () => {
+  const now = new Date();
+  return {
+    h: now.getHours().toString().padStart(2, "0"),
+    m: now.getMinutes().toString().padStart(2, "0"),
+    s: now.getSeconds().toString().padStart(2, "0"),
+  };
+};
+  const [fromTime, setFromTime] = useState(getCurrentTime());
+const [toTime, setToTime] = useState(getCurrentTime());
+ useFocusEffect(
+    useCallback(() => {
+      // Update time immediately on focus
+      setFromTime(getCurrentTime())
+      setToTime(getCurrentTime())
+      setFilteredData([])
+    }, [])
+  );
 
   // Format time object to HH:MM:SS string
   const formatTime = (time: { h: string; m: string; s: string }) =>
@@ -195,23 +218,33 @@ const rotateToPortrait = async () => {
 
           {/* Date & Time Pickers */}
           <Text className="text-white mb-2 font-semibold">From</Text>
-          <View className="flex-row items-center justify-center mb-4">
-            <DateBox date={fromDate} onPress={() => setShowDate("from")} />
-            <TimeBox value={fromTime.h} onPress={() => setPicker({ type: "h", target: "from" })} />
-            <Colon />
-            <TimeBox value={fromTime.m} onPress={() => setPicker({ type: "m", target: "from" })} />
-            <Colon />
-            <TimeBox value={fromTime.s} onPress={() => setPicker({ type: "s", target: "from" })} />
-          </View>
+<View className="flex-row items-center justify-center mb-4">
+  <View className="mr-2">
+    <DateBox date={fromDate} onPress={() => setShowDate("from")} />
+  </View>
+
+  <View className="flex-row items-center gap-x-1">
+    <TimeBox value={fromTime.h} onPress={() => setPicker({ type: "h", target: "from" })} />
+    <Colon />
+    <TimeBox value={fromTime.m} onPress={() => setPicker({ type: "m", target: "from" })} />
+    <Colon />
+    <TimeBox value={fromTime.s} onPress={() => setPicker({ type: "s", target: "from" })} />
+  </View>
+</View>
+
 
           <Text className="text-white mb-2 font-semibold">To</Text>
           <View className="flex-row items-center justify-center mb-6">
+              <View className="mr-2">
             <DateBox date={toDate} onPress={() => setShowDate("to")} />
+              </View>
+                <View className="flex-row items-center gap-x-1">
             <TimeBox value={toTime.h} onPress={() => setPicker({ type: "h", target: "to" })} />
             <Colon />
             <TimeBox value={toTime.m} onPress={() => setPicker({ type: "m", target: "to" })} />
             <Colon />
             <TimeBox value={toTime.s} onPress={() => setPicker({ type: "s", target: "to" })} />
+              </View>
           </View>
 
           {/* PARAMETERS */}
@@ -237,11 +270,18 @@ const rotateToPortrait = async () => {
         <View className="bg-[#071b2a] border border-[#0b2a3c] rounded-2xl p-4 mb-6">
           <Text className="text-white text-lg font-semibold mb-2 text-center">Data Filter</Text>
           <View className="flex-row flex-wrap gap-3 justify-center">
-            {SENSOR_KEYS.map(f => (
+         {SENSOR_KEYS.map(f => (
               <TouchableOpacity
                 key={f.label}
                 onPress={() => toggleFilter(f.label)}
-                className={`px-4 py-3 rounded-lg ${filters.includes(f.label) ? "bg-emerald-500/30 border border-emerald-500" : "bg-[#0a2234]"}`}
+                style={{
+                  paddingVertical: 12,
+                  paddingHorizontal: 16,
+                  borderRadius: 12,
+                  borderWidth: filters.includes(f.label) ? 1 : 0,
+                  borderColor: CHART_COLORS[f.label],
+                  backgroundColor: filters.includes(f.label) ? CHART_COLORS[f.label] + "33" : "#0a2234",
+                }}
               >
                 <Text className="text-white text-xs font-semibold">{f.label}</Text>
               </TouchableOpacity>
@@ -292,6 +332,10 @@ const rotateToPortrait = async () => {
         decimalPlaces: 1,
         color: (opacity = 1, index) => chartData.datasets[index ?? 0].color(),
         labelColor: () => "#64748b",
+           propsForBackgroundLines: {
+      stroke: "#0b2a3c", // custom grid line color
+      strokeDasharray: "", // solid lines, or "4,2" for dashed
+    },
       }}
       
       bezier
