@@ -105,7 +105,7 @@ export default function CustomDrawerContent(props: any) {
             >
               <Text className="text-white font-semibold">Dashboard</Text>
             </TouchableOpacity>
-
+{/* 
             <TouchableOpacity
               className={`p-4 rounded-md mt-6 mb-2 ${
                 navigation.getState().routes[navigation.getState().index]
@@ -128,7 +128,7 @@ export default function CustomDrawerContent(props: any) {
               onPress={() => navigation.navigate("ChartOption2")}
             >
               <Text className="text-white font-semibold">Analyze2</Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
 
             <TouchableOpacity
               className={`p-4 rounded-md mt-6 mb-2 ${
@@ -139,7 +139,7 @@ export default function CustomDrawerContent(props: any) {
               }`}
               onPress={() => navigation.navigate("ChartOption3")}
             >
-              <Text className="text-white font-semibold">Analyze3</Text>
+              <Text className="text-white font-semibold">Analyze</Text>
             </TouchableOpacity>
 
             <View className="flex-1 p-4 "></View>
