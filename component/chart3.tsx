@@ -181,7 +181,11 @@ export default function AnalyzeScreen() {
     datasets: SENSOR_KEYS.filter(
       (s) => filters.includes(s.label) || filters.length === 0
     ).map((sensor) => ({
-      data: filteredData.map((item) => item[sensor.key] ?? 0),
+      data: filteredData.map((item) => {
+  const v = item[sensor.key];
+  return typeof v === "number" ? v : Number(v) || 0;
+}),
+
       color: () => sensor.color,
     })),
   };
